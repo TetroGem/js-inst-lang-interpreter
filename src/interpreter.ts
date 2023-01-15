@@ -11,7 +11,7 @@ export function interpretOn(code: string, memory: Bytes) {
         const inst = insts[instPointer];
         const result = runInstOn(inst, memory);
         if(result !== undefined) {
-            if(typeof result === 'number') console.log(result);
+            if(typeof result === 'number' || typeof result === 'string') process.stdout.write(result.toString());
             else if(Array.isArray(result)) {
                 switch(result[0]) {
                     case 'jmp':
@@ -46,7 +46,7 @@ function parseInst(inst: string, memory: Bytes): [op: Operator, arg1: Word, arg2
 }
 
 function parseArg(value: string, memory: Bytes): Word {
-    return value.includes('$') ? parseReference(value, memory) : parseLiteral(value);
+    return value.match(/[8|16|32](\$).*/) ? parseReference(value, memory) : parseLiteral(value);
 }
 
 function parseReference(value: string, memory: Bytes): Word {
@@ -78,55 +78,56 @@ const Literal = {
     UINT: 'u',
     INT: 'i',
     FLOAT: 'f',
+    CHAR: 'c',
 } as const;
 type Literal = typeof Literal[keyof typeof Literal];
 
 function parseLiteral(value: string): Word {
-    let literal: Literal | null = null;
-    for(const l of Object.values(Literal)) {
-        if(value.includes(l)) {
-            literal = l;
-            break;
-        }
+    // check if has literal type char
+    if(!value.match(/[a-zA-Z]/)) {
+        value = '32i' + value;
     }
 
-    if(literal === null) {
-        value = "32i" + value;
-        literal = 'i';
-    }
+    const match = /(8|16|32)([a-z])(.*)/.exec(value);
+    if(match === null) throw new Error(`Invalid literal! (Found: ${value})`);
 
-    const parts = value.split(literal);
-    if(parts.length !== 2) throw new Error(`Literal has invalid part count! (Found: ${parts}, Expected: length 2)`);
+    const [_, bytes, literalChar, raw] = match;
+    if(!Object.values(Literal).includes(literalChar as Literal)) throw new Error(`Invalid literal type flag! (Found: ${literalChar})`);
 
-    const [bytes, scalar_raw] = parts;
+    const literal = literalChar as Literal;
     const type = bytes + literal;
-
-    const dataView = Bytes.word();
+    const word = Bytes.word();
     switch(type) {
         case '8u':
-            dataView.setUint8(0, parseInt(scalar_raw));
+            word.setUint8(0, parseInt(raw));
             break;
         case '16u':
-            dataView.setUint16(0, parseInt(scalar_raw));
+            word.setUint16(0, parseInt(raw));
             break;
         case '32u':
-            dataView.setUint32(0, parseInt(scalar_raw));
+            word.setUint32(0, parseInt(raw));
             break;
         case '8i':
-            dataView.setInt8(0, parseInt(scalar_raw));
+            word.setInt8(0, parseInt(raw));
             break;
         case '16i':
-            dataView.setInt16(0, parseInt(scalar_raw));
+            word.setInt16(0, parseInt(raw));
             break;
         case '32i':
-            dataView.setInt32(0, parseInt(scalar_raw));
+            word.setInt32(0, parseInt(raw));
             break;
         case '32f':
-            dataView.setFloat32(0, parseFloat(scalar_raw));
+            word.setFloat32(0, parseFloat(raw));
+            break;
+        case '8c':
+            word.setUint8(0, raw.charCodeAt(0));
+            break;
+        case '16c':
+            word.setUint16(0, raw.charCodeAt(0));
             break;
         default:
             throw new Error(`Invalid literal type! (Found: ${literal})`);
     }
 
-    return dataView;
+    return word;
 }
