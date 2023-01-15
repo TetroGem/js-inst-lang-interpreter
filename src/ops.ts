@@ -120,6 +120,17 @@ function mul(memory: Bytes, address: Word, value: Word): undefined {
     return undefined; 
 };
 
+function mulf(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentFloat = memory.getFloat32(addressInt);
+    const valueFloat = value.getFloat32(0);
+    
+    const productFloat = currentFloat * valueFloat;
+
+    memory.setFloat32(addressInt, productFloat);
+    return undefined; 
+};
+
 function div(memory: Bytes, address: Word, value: Word): undefined {
     const addressInt = address.getUint32(0);
     const currentInt = memory.getUint32(addressInt);
@@ -128,6 +139,17 @@ function div(memory: Bytes, address: Word, value: Word): undefined {
     const quotientInt = currentInt / valueInt;
 
     memory.setUint32(addressInt, quotientInt);
+    return undefined; 
+};
+
+function divf(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentFloat = memory.getFloat32(addressInt);
+    const valueFloat = value.getFloat32(0);
+    
+    const quotientFloat = currentFloat / valueFloat;
+
+    memory.setFloat32(addressInt, quotientFloat);
     return undefined; 
 };
 
@@ -166,7 +188,9 @@ export const Operator = {
     ADD_FLOAT: 'addf',
     SUBTRACT_FLOAT: 'subf',
     MULTIPLY: 'mul',
+    MULTIPLY_FLOAT: 'mulf',
     DIVIDE: 'div',
+    DIVIDE_FLOAT: 'divf',
     JUMP: 'jmp',
     JUMP_IF: 'jif',
     JUMP_NOT_IF: 'jni',
@@ -187,5 +211,5 @@ type OperatorReturn =
     ;
 
 export const opFunctions: Record<Operator, (memory: Bytes, address: Word, value: Word) => OperatorReturn> = {
-    clr, inp, out, add, sub, addf, subf, mul, div, jmp, jif, jni, end,
+    clr, inp, out, add, sub, addf, subf, mul, mulf, div, divf, jmp, jif, jni, end,
 } as const;
