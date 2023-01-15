@@ -109,6 +109,28 @@ function subf(memory: Bytes, address: Word, value: Word): undefined {
     return undefined; 
 };
 
+function mul(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+    
+    const productInt = currentInt * valueInt;
+
+    memory.setUint32(addressInt, productInt);
+    return undefined; 
+};
+
+function div(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+    
+    const quotientInt = currentInt / valueInt;
+
+    memory.setUint32(addressInt, quotientInt);
+    return undefined; 
+};
+
 function jmp(memory: Bytes, address: Word, value: Word): ['jmp', number] {
     const targetLineInt = value.getUint32(0);
 
@@ -143,6 +165,8 @@ export const Operator = {
     SUBTRACT: 'sub',
     ADD_FLOAT: 'addf',
     SUBTRACT_FLOAT: 'subf',
+    MULTIPLY: 'mul',
+    DIVIDE: 'div',
     JUMP: 'jmp',
     JUMP_IF: 'jif',
     JUMP_NOT_IF: 'jni',
@@ -163,5 +187,5 @@ type OperatorReturn =
     ;
 
 export const opFunctions: Record<Operator, (memory: Bytes, address: Word, value: Word) => OperatorReturn> = {
-    clr, inp, out, add, sub, addf, subf, jmp, jif, jni, end,
+    clr, inp, out, add, sub, addf, subf, mul, div, jmp, jif, jni, end,
 } as const;
