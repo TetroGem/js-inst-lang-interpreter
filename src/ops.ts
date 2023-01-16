@@ -65,6 +65,30 @@ function out(memory: Bytes, address: Word, value: Word): number | string {
     }
 };
 
+function rdb(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const lengthInt = value.getUint32(0);
+
+    const input = prompt("");
+    for(let i = 0; i < Math.min(lengthInt, input.length); i++) {
+        memory.setUint8(addressInt + i, input.charCodeAt(i));
+    }
+
+    return undefined;
+}
+
+function rdh(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const lengthInt = value.getUint32(0);
+
+    const input = prompt("");
+    for(let i = 0; i < Math.min(lengthInt, input.length); i++) {
+        memory.setUint16(addressInt + (i * 2), input.charCodeAt(i));
+    }
+
+    return undefined;
+}
+
 function add(memory: Bytes, address: Word, value: Word): undefined {
     const addressInt = address.getUint32(0);
     const currentInt = memory.getUint32(addressInt);
@@ -153,6 +177,94 @@ function divf(memory: Bytes, address: Word, value: Word): undefined {
     return undefined; 
 };
 
+function mod(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+    
+    const remainderInt = currentInt % valueInt;
+
+    memory.setUint32(addressInt, remainderInt);
+    return undefined; 
+};
+
+function modf(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentFloat = memory.getFloat32(addressInt);
+    const valueFloat = value.getFloat32(0);
+    
+    const remainderFloat = currentFloat % valueFloat;
+
+    memory.setFloat32(addressInt, remainderFloat);
+    return undefined; 
+};
+
+function and(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const andInt = currentInt & valueInt;
+
+    memory.setUint32(addressInt, andInt);
+    return undefined;
+}
+
+function ior(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const orInt = currentInt | valueInt;
+
+    memory.setUint32(addressInt, orInt);
+    return undefined;
+}
+
+function xor(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const xorInt = currentInt ^ valueInt;
+
+    memory.setUint32(addressInt, xorInt);
+    return undefined;
+}
+
+function not(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const notInt = ~currentInt;
+
+    memory.setUint32(addressInt, notInt);
+    return undefined;
+}
+
+function shl(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const shiftInt = currentInt << valueInt;
+
+    memory.setUint32(addressInt, shiftInt);
+    return undefined;
+}
+
+function shr(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const shiftInt = currentInt >> valueInt;
+
+    memory.setUint32(addressInt, shiftInt);
+    return undefined;
+}
+
 function jmp(memory: Bytes, address: Word, value: Word): ['jmp', number] {
     const targetLineInt = value.getUint32(0);
 
@@ -183,6 +295,12 @@ export const Operator = {
     CLEAR: 'clr',
     INPUT: 'inp',
     OUT: 'out',
+    READ_BYTES: 'rdb',
+    READ_HALFS: 'rdh',
+    JUMP: 'jmp',
+    JUMP_IF: 'jif',
+    JUMP_NOT_IF: 'jni',
+    END: 'end',
     ADD: 'add',
     SUBTRACT: 'sub',
     ADD_FLOAT: 'addf',
@@ -191,10 +309,14 @@ export const Operator = {
     MULTIPLY_FLOAT: 'mulf',
     DIVIDE: 'div',
     DIVIDE_FLOAT: 'divf',
-    JUMP: 'jmp',
-    JUMP_IF: 'jif',
-    JUMP_NOT_IF: 'jni',
-    END: 'end',
+    MOD: 'mod',
+    MOD_FLOAT: 'modf',
+    AND: 'and',
+    IOR: 'ior',
+    XOR: 'xor',
+    NOT: 'not',
+    SHIFT_LEFT: 'shl',
+    SHIFT_RIGHT: 'shr',
 } as const;
 export type Operator = typeof Operator[keyof typeof Operator];
 
@@ -211,5 +333,7 @@ type OperatorReturn =
     ;
 
 export const opFunctions: Record<Operator, (memory: Bytes, address: Word, value: Word) => OperatorReturn> = {
-    clr, inp, out, add, sub, addf, subf, mul, mulf, div, divf, jmp, jif, jni, end,
+    clr, inp, out, rdb, rdh, jmp, jif, jni, end,
+    add, sub, addf, subf, mul, mulf, div, divf, mod, modf,
+    and, ior, xor, not, shl, shr,
 } as const;

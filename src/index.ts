@@ -2,34 +2,36 @@ import { Bytes } from "./Bytes";
 import { convertBytes } from "./convert-bytes";
 import { interpretOn } from "./interpreter";
 
-const mem = new Bytes(5);
+const mem = new Bytes(128);
 
 // 0 1 2 3 4 5 6 7
 // a b _a_ _b_ _s_
 
 const code = `
 
-add 4 8u10
+inp 6 0
 
-addf 0 32f3
+add 0 16u1
+add 2 16u1
 
-out 0 6
-out 4 7
+out 0 2
+out 2 2
 
-addf 0 32f2
+jni 8$6 16
+add 4 16$0
+add 4 16$2
 
-out 0 6
-out 4 7
+out 4 2
 
-divf 0 32f2
+clr 0 2
+add 0 16$2
+clr 2 2
+add 2 16$4
+clr 4 2
 
-out 0 6
-out 4 7
+sub 6 8u1
+jmp 0 5
 
-mulf 0 32f2
-
-out 0 6
-out 4 7
 
 end 0 0
 
