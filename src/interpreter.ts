@@ -79,6 +79,8 @@ const Literal = {
     INT: 'i',
     FLOAT: 'f',
     CHAR: 'c',
+    HEX: 'x',
+    BIN: 'b',
 } as const;
 type Literal = typeof Literal[keyof typeof Literal];
 
@@ -124,6 +126,24 @@ function parseLiteral(value: string): Word {
             break;
         case '16c':
             word.setUint16(0, raw.charCodeAt(0));
+            break;
+        case '8x':
+            word.setUint8(0, parseInt(raw, 16));
+            break;
+        case '16x':
+            word.setUint16(0, parseInt(raw, 16));
+            break;
+        case '32x':
+            word.setUint32(0, parseInt(raw, 16));
+            break;
+        case '8b':
+            word.setUint8(0, parseInt(raw, 2));
+            break;
+        case '16b':
+            word.setUint16(0, parseInt(raw, 2));
+            break;
+        case '32b':
+            word.setUint32(0, parseInt(raw, 2));
             break;
         default:
             throw new Error(`Invalid literal type! (Found: ${literal})`);

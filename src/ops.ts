@@ -13,6 +13,12 @@ export const Type = {
     FLOAT32: 6,
     CHAR8: 7,
     CHAR16: 8,
+    HEX8: 9,
+    HEX16: 10,
+    HEX32: 11,
+    BIN8: 12,
+    BIN16: 13,
+    BIN32: 14,
 } as const;
 export type Type = typeof Type[keyof typeof Type];
 
@@ -41,6 +47,14 @@ function inp(memory: Bytes, address: Word, value: Word): undefined {
         case Type.UINT32: memory.setUint32(addressInt, parseInt(input)); break;
         case Type.INT32: memory.setInt32(addressInt, parseInt(input)); break;
         case Type.FLOAT32: memory.setFloat32(addressInt, parseFloat(input)); break;
+        case Type.CHAR8: memory.setUint8(addressInt, input.charCodeAt(0)); break;
+        case Type.CHAR16: memory.setUint16(addressInt, input.charCodeAt(0)); break;
+        case Type.HEX8: memory.setUint8(addressInt, parseInt(input, 16)); break;
+        case Type.HEX16: memory.setUint16(addressInt, parseInt(input, 16)); break;
+        case Type.HEX32: memory.setUint32(addressInt, parseInt(input, 16)); break;
+        case Type.BIN8: memory.setUint8(addressInt, parseInt(input, 2)); break;
+        case Type.BIN16: memory.setUint16(addressInt, parseInt(input, 2)); break;
+        case Type.BIN32: memory.setUint32(addressInt, parseInt(input, 2)); break;
         default: throw new Error(`Invalid value for inp operation! (Found: ${value})`);
     }
 
@@ -61,6 +75,12 @@ function out(memory: Bytes, address: Word, value: Word): number | string {
         case Type.FLOAT32: return memory.getFloat32(addressInt);
         case Type.CHAR8: return String.fromCharCode(memory.getUint8(addressInt));
         case Type.CHAR16: return String.fromCharCode(memory.getUint16(addressInt));
+        case Type.HEX8: return memory.getUint8(addressInt).toString(16).toUpperCase();
+        case Type.HEX16: return memory.getUint16(addressInt).toString(16).toUpperCase();
+        case Type.HEX32: return memory.getUint32(addressInt).toString(16).toUpperCase();
+        case Type.BIN8: return memory.getUint8(addressInt).toString(2);
+        case Type.BIN16: return memory.getUint16(addressInt).toString(2);
+        case Type.BIN32: return memory.getUint32(addressInt).toString(2);
         default: throw new Error(`Invalid value for out operation! (Found: ${value}`);
     }
 };
@@ -265,6 +285,17 @@ function shr(memory: Bytes, address: Word, value: Word): undefined {
     return undefined;
 }
 
+function shru(memory: Bytes, address: Word, value: Word): undefined {
+    const addressInt = address.getUint32(0);
+    const currentInt = memory.getUint32(addressInt);
+    const valueInt = value.getUint32(0);
+
+    const shiftInt = currentInt >>> valueInt;
+
+    memory.setUint32(addressInt, shiftInt);
+    return undefined;
+}
+
 function jmp(memory: Bytes, address: Word, value: Word): ['jmp', number] {
     const targetLineInt = value.getUint32(0);
 
@@ -317,6 +348,7 @@ export const Operator = {
     NOT: 'not',
     SHIFT_LEFT: 'shl',
     SHIFT_RIGHT: 'shr',
+    SHIFT_RIGHT_UNSIGNED: 'shru',
 } as const;
 export type Operator = typeof Operator[keyof typeof Operator];
 
@@ -335,5 +367,5 @@ type OperatorReturn =
 export const opFunctions: Record<Operator, (memory: Bytes, address: Word, value: Word) => OperatorReturn> = {
     clr, inp, out, rdb, rdh, jmp, jif, jni, end,
     add, sub, addf, subf, mul, mulf, div, divf, mod, modf,
-    and, ior, xor, not, shl, shr,
+    and, ior, xor, not, shl, shr, shru,
 } as const;
