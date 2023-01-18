@@ -3,6 +3,9 @@ export type Half = Bytes<2>;
 export type Word = Bytes<4>;
 export type Double = Bytes<8>;
 
+export type IntBits = 8 | 16 | 32 | 64;
+export type FloatBits = 32 | 64;
+
 export class Bytes<N extends number = number> {
     public static byte(): Byte {
         return new Bytes(1);
@@ -182,5 +185,66 @@ export class Bytes<N extends number = number> {
 
     getFloat32(byteOffset: number): number {
         return this.getWord(byteOffset).dataView.getFloat32(0);
+    }
+
+    setBigUint64(byteOffset: number, value: bigint): void {
+        const double = Bytes.double();
+        double.dataView.setBigUint64(0, value);
+        this.setDouble(byteOffset, double);
+    }
+
+    getBigUint64(byteOffset: number): bigint {
+        return this.getDouble(byteOffset).dataView.getBigUint64(0);
+    }
+
+    setBigInt64(byteOffset: number, value: bigint): void {
+        const double = Bytes.double();
+        double.dataView.setBigInt64(0, value);
+        this.setDouble(byteOffset, double);
+    }
+
+    getBigInt64(byteOffset: number): bigint {
+        return this.getDouble(byteOffset).dataView.getBigInt64(0);
+    }
+
+    setFloat64(byteOffset: number, value: number): void {
+        const double = Bytes.double();
+        double.dataView.setFloat64(0, value);
+        this.setDouble(byteOffset, double);
+    }
+
+    getFloat64(byteOffset: number): number {
+        return this.getDouble(byteOffset).dataView.getFloat64(0);
+    }
+
+    getUintN(byteOffset: number, length: 64): bigint;
+    getUintN(byteOffset: number, length: Exclude<IntBits, 64>): number;
+    getUintN(byteOffset: number, length: IntBits): bigint | number;
+    getUintN(byteOffset: number, length: IntBits): bigint | number {
+        switch(length) {
+            case 8: return this.getUint8(byteOffset);
+            case 16: return this.getUint16(byteOffset);
+            case 32: return this.getUint32(byteOffset);
+            case 64: return this.getBigUint64(byteOffset);
+            default: throw new Error(`Invalid bits length (Found: ${length}, Expected: 8, 16, 32, 64)`);
+        }
+    }
+
+    getIntN(byteOffset: number, length: IntBits): number | bigint {
+        switch(length) {
+            case 8: return this.getInt8(byteOffset);
+            case 16: return this.getInt16(byteOffset);
+            case 32: return this.getInt32(byteOffset);
+            case 64: return this.getBigInt64(byteOffset);
+            default: throw new Error(`Invalid bits length (Found: ${length}, Expected: 8, 16, 32, 64)`);
+        }
+    }
+
+    getFloatN(byteOffset: number, length: FloatBits): number {
+        switch(length) {
+            case 32: return this.getFloat32(byteOffset);
+            case 64: return this.getFloat64(byteOffset);
+            default: throw new Error(`Invalid bits length (Found: ${length}, Expected: 32)`);
+        }
     }
 }

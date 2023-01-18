@@ -1,25 +1,36 @@
 import { Bytes } from "./Bytes";
 import { convertBytes } from "./convert-bytes";
 import { interpretOn } from "./interpreter";
+import { runOn } from "./parser";
+import fs from 'fs';
+import path from 'path';
 
-const mem = new Bytes(9);
+const memory = new Bytes(9);
+const filename = path.resolve(process.argv[2]);
+
+fs.open(filename, 'r', (err, fd) => {
+    if(err) throw err;
+
+    fs.read(fd, (err, bytesRead, buffer) => {
+        if(err) throw err;
+
+        const program = buffer.buffer.slice(0, bytesRead);
+        // console.log(memory);
+        runOn(program, memory);
+        // console.log(memory);
+    });
+});
 
 // 0 1 2 3 4 5 6 7
 // a b _a_ _b_ _s_
 
-const code = `
-add 0 8u1
+// const code = `
 
-add 5 8$0
-and 5 8u2
-clr 0 1
-add 0 8$5
+// add 8 
 
-end 0 0
+// `;
 
-`;
-
-interpretOn(code, mem);
+// interpretOn(code, mem);
 
 // Fibonacci
 /*
