@@ -2,15 +2,19 @@ import type { Bytes } from "./Bytes";
 import { execute } from "./executors";
 import type { OperationResult } from "./ops";
 
+export type SizeKey = 0 | 1 | 2 | 3;
+
 export function runOn(program: ArrayBuffer, memory: Bytes) {
     let index = 0;
     const dataView = new DataView(program);
     while(index < dataView.byteLength) {
-        const { opCode, returnSize, returnIsFloat, address, current, currentIsFloat, value, valueIsFloat, endIndex }
+        const { opCode, returnSize, returnIsFloat, address, current, currentSize, currentIsFloat, value, valueSize, valueIsFloat, endIndex }
             = parseNextInstruction(dataView, index, memory);
         index = endIndex;
-        const result = execute(opCode, current, currentIsFloat, value, valueIsFloat);
-        applyResultTo(result, returnSize, returnIsFloat, memory, address);
+        const result = execute(opCode, current, currentSize, currentIsFloat, value, valueSize, valueIsFloat);
+        const applied = applyResultTo(result, returnSize, returnIsFloat, memory, address, index);
+        index = applied.index;
+        if(applied.end) break;
     }
 }
 
@@ -120,8 +124,10 @@ export function parseNextInstruction(dataView: DataView, index: number, memory: 
         returnIsFloat,
         address: addressNumber,
         current: currentNumber,
+        currentSize: addressReach,
         currentIsFloat: arg1IsFloat,
         value: valueNumber,
+        valueSize: arg2ValueSize,
         valueIsFloat: arg2IsFloat,
         endIndex: index,
     };
@@ -129,29 +135,70 @@ export function parseNextInstruction(dataView: DataView, index: number, memory: 
 
 function applyResultTo(
     result: OperationResult<number | bigint>, returnSize: number, returnIsFloat: boolean,
-    memory: Bytes, address: number
+    memory: Bytes, address: number, index: number
 ) {
-    switch(result[0]) {
-        case 'set':
-            switch(returnIsFloat) {
-                case false:
-                    switch(returnSize) {
-                        case 0: memory.setUint8(address, Number(result[1])); break;
-                        case 1: memory.setUint16(address, Number(result[1])); break;
-                        case 2: memory.setUint32(address, Number(result[1])); break;
-                        case 3: memory.setBigUint64(address, BigInt(result[1])); break;
-                        default: throw new Error(`Invalid return size (for int) (Found: ${returnSize}, Expected: 0, 1, 2, 3)`);
+    let end = false;
+
+    if(result !== null) {
+        switch(result[0]) {
+            case 'set':
+                switch(returnIsFloat) {
+                    case false:
+                        switch(returnSize) {
+                            case 0: memory.setUint8(address, Number(result[1])); break;
+                            case 1: memory.setUint16(address, Number(result[1])); break;
+                            case 2: memory.setUint32(address, Number(result[1])); break;
+                            case 3: memory.setBigUint64(address, BigInt(result[1])); break;
+                            default: throw new Error(`Invalid return size (for int) (Found: ${returnSize}, Expected: 0, 1, 2, 3)`);
+                        }
+                        break;
+                    case true:
+                        switch(returnSize) {
+                            case 2: memory.setFloat32(address, Number(result[1])); break;
+                            case 3: memory.setFloat64(address, Number(result[1])); break;
+                            default: throw new Error(`Invalid return size (for float) (Found: ${returnSize}, Expected: 2, 3)`);
+                        }
+                        break;
+                }
+                break;
+            case 'out':
+                process.stdout.write(result[1]);
+                break;
+            case 'jmp':
+                index = result[1];
+                break;
+            case 'wrs':
+                const str = result[1];
+                for(let i = 0; i < result[1].length; i++) {
+                    switch(returnIsFloat) {
+                        case true:
+                            switch(returnSize) {
+                                case 0: memory.setUint8(address + i, str.charCodeAt(i)); break;
+                                case 1: memory.setUint16(address + (i * 2), str.charCodeAt(i)); break;
+                                case 2: memory.setUint32(address + (i * 4), str.charCodeAt(i)); break;
+                                case 3: memory.setBigUint64(address + (i * 8), BigInt(str.charCodeAt(i))); break;
+                                default: throw new Error(`Invalid return size (for int wrs) (Found: ${returnSize}, Expected: 0, 1, 2, 3)`);
+                            }
+                            break;
+                        case false:
+                            switch(returnSize) {
+                                case 2: memory.setFloat32(address + (i * 4), str.charCodeAt(i)); break;
+                                case 3: memory.setFloat64(address + (i * 8), str.charCodeAt(i)); break;
+                                default: throw new Error(`Invalid return size (for float wrs) (Found: ${returnSize}, Expected: 2, 3)`);
+                            }
+                            break;
                     }
-                    break;
-                case true:
-                    switch(returnSize) {
-                        case 2: memory.setFloat32(address, Number(result[1])); break;
-                        case 3: memory.setFloat64(address, Number(result[1])); break;
-                        default: throw new Error(`Invalid return size (for float) (Found: ${returnSize}, Expected: 2, 3)`);
-                    }
-                    break;
-            }
-            break;
-        default: throw new Error(`Invalid operation result type (Found: ${result[0]})`);
+                }
+                break;
+            case 'end':
+                end = true;
+                break;
+            default: throw new Error(`Invalid operation result type (Found: ${result[0]})`);
+        }
     }
+
+    return {
+        index,
+        end,
+    };
 }

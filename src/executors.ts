@@ -1,20 +1,39 @@
-import type { Byte, Bytes, Double, Half, Word } from "./Bytes";
-import { OperationFunction, OperationResult, opFunctions } from "./ops";
-
-export type ExecutionType = 32 | 16 | 8 | 64;
-
+import { OperationResult, opFunctions } from "./ops";
+import type { SizeKey } from "./parser";
 export function execute(
     opCode: number,
-    current: number | bigint, currentIsFloat: boolean,
-    value: number | bigint, valueIsFloat: boolean
+    current: number | bigint, currentSize: SizeKey, currentIsFloat: boolean,
+    value: number | bigint, valueSize: SizeKey, valueIsFloat: boolean
 ) {
     const op = opFunctions[opCode];
 
     let result: OperationResult<number | bigint>;
     if(currentIsFloat || valueIsFloat) {
-        result = op(Number(current), Number(value));
+        result = op({
+            current: {
+                number: Number(current),
+                size: currentSize,
+                isFloat: currentIsFloat,
+            },
+            value: {
+                number: Number(value),
+                size: valueSize,
+                isFloat: valueIsFloat,
+            },
+        });
     } else {
-        result = op(BigInt(current), BigInt(value));
+        result = op({
+            current: {
+                number: BigInt(current),
+                size: currentSize,
+                isFloat: currentIsFloat,
+            },
+            value: {
+                number: BigInt(value),
+                size: valueSize,
+                isFloat: valueIsFloat,
+            },
+        });
     }
 
     return result;

@@ -1,11 +1,9 @@
-import { Bytes } from "./Bytes";
-import { convertBytes } from "./convert-bytes";
-import { interpretOn } from "./interpreter";
-import { runOn } from "./parser";
 import fs from 'fs';
 import path from 'path';
+import { Bytes } from "./Bytes";
+import { runOn } from "./parser";
 
-const memory = new Bytes(9);
+const memory = new Bytes(256);
 const filename = path.resolve(process.argv[2]);
 
 fs.open(filename, 'r', (err, fd) => {
