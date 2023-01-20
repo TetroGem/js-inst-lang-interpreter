@@ -171,7 +171,7 @@ function applyResultTo(
                 const str = result[1];
                 for(let i = 0; i < result[1].length; i++) {
                     switch(returnIsFloat) {
-                        case true:
+                        case false:
                             switch(returnSize) {
                                 case 0: memory.setUint8(address + i, str.charCodeAt(i)); break;
                                 case 1: memory.setUint16(address + (i * 2), str.charCodeAt(i)); break;
@@ -180,7 +180,7 @@ function applyResultTo(
                                 default: throw new Error(`Invalid return size (for int wrs) (Found: ${returnSize}, Expected: 0, 1, 2, 3)`);
                             }
                             break;
-                        case false:
+                        case true:
                             switch(returnSize) {
                                 case 2: memory.setFloat32(address + (i * 4), str.charCodeAt(i)); break;
                                 case 3: memory.setFloat64(address + (i * 8), str.charCodeAt(i)); break;
