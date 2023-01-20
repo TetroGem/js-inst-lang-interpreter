@@ -88,18 +88,14 @@ function inp(options: OperationOptions<any>): ['set', any] {
     }
 }
 
-function rds(options: OperationOptions<bigint>): ['wrs', string];
-function rds(options: OperationOptions<number>): ['wrs', string];
-function rds(options: OperationOptions<any>): ['wrs', string] {
+function rds(options: OperationOptions<bigint | number>): ['wrs', string] {
     const input = prompt("");
     const maxLength = Number(options.value.number);
     const substring = input.substring(0, maxLength);
     return ['wrs', substring];
 }
 
-function out(options: OperationOptions<bigint>): ['out', string];
-function out(options: OperationOptions<number>): ['out', string];
-function out(options: OperationOptions<any>): ['out', string] {
+function out(options: OperationOptions<bigint | number>): ['out', string] {
     const { current, value } = options;
 
     const currentView = new DataView(new ArrayBuffer(8));
@@ -152,22 +148,16 @@ function out(options: OperationOptions<any>): ['out', string] {
     return ['out', output];
 }
 
-function jmp(options: OperationOptions<bigint>): ['jmp', number];
-function jmp(options: OperationOptions<number>): ['jmp', number];
-function jmp(options: OperationOptions<any>): ['jmp', number] {
+function jmp(options: OperationOptions<bigint | number>): ['jmp', number] {
     return ['jmp', Number(options.value.number)];
 }
 
-function jif(options: OperationOptions<bigint>): ['jmp', number] | null;
-function jif(options: OperationOptions<number>): ['jmp', number] | null;
-function jif(options: OperationOptions<any>): ['jmp', number] | null {
+function jif(options: OperationOptions<bigint | number>): ['jmp', number] | null {
     if(Number(options.current.number) === 0) return null;
     return ['jmp', Number(options.value.number)];
 }
 
-function jni(options: OperationOptions<bigint>): ['jmp', number] | null;
-function jni(options: OperationOptions<number>): ['jmp', number] | null;
-function jni(options: OperationOptions<any>): ['jmp', number] | null {
+function jni(options: OperationOptions<bigint | number>): ['jmp', number] | null {
     if(Number(options.current.number) !== 0) return null;
     return ['jmp', Number(options.value.number)];
 }
@@ -188,6 +178,77 @@ function sub(options: OperationOptions<bigint>): ['set', bigint];
 function sub(options: OperationOptions<number>): ['set', number];
 function sub(options: OperationOptions<any>): ['set', any] {
     return ['set', options.current.number - options.value.number];
+}
+
+function mul(options: OperationOptions<bigint>): ['set', bigint];
+function mul(options: OperationOptions<number>): ['set', number];
+function mul(options: OperationOptions<any>): ['set', any] {
+    return ['set', options.current.number * options.value.number];
+}
+
+function div(options: OperationOptions<bigint>): ['set', bigint];
+function div(options: OperationOptions<number>): ['set', number];
+function div(options: OperationOptions<any>): ['set', any] {
+    return ['set', options.current.number / options.value.number];
+}
+
+function mod(options: OperationOptions<bigint>): ['set', bigint];
+function mod(options: OperationOptions<number>): ['set', number];
+function mod(options: OperationOptions<any>): ['set', any] {
+    return ['set', options.current.number % options.value.number];
+}
+
+function getBitwiseInts(options: OperationOptions<any>) {
+    let currentInt: bigint;
+    let valueInt: bigint;
+
+    if(options.current.isFloat) {
+        const dataView = new DataView(new ArrayBuffer(8));
+        dataView.setFloat64(0, options.current.number);
+        currentInt = dataView.getBigUint64(0);
+        dataView.setFloat64(0, options.value.number);
+        valueInt = dataView.getBigUint64(0);
+    } else {
+        currentInt = options.current.number;
+        valueInt = options.value.number;
+    }
+
+    return { currentInt, valueInt };
+}
+
+function and(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', currentInt & valueInt];
+}
+
+function ior(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', currentInt | valueInt];
+}
+
+function xor(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', currentInt ^ valueInt];
+}
+
+function not(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt } = getBitwiseInts(options);
+    return ['set', ~currentInt];
+}
+
+function sls(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', currentInt << valueInt ];
+}
+
+function srs(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', currentInt >> valueInt ];
+}
+
+function sru(options: OperationOptions<bigint | number>): ['set', bigint] {
+    const { currentInt, valueInt } = getBitwiseInts(options);
+    return ['set', BigInt(Number(currentInt) >>> Number(valueInt)) ];
 }
 
 //~h Exports
@@ -230,8 +291,9 @@ export function isOperator(value: unknown): value is Operator {
     return Object.values(Operator).includes(value as Operator);
 }
 
-export type OperationResult<N extends number | bigint> = 
-    ['set', N]
+export type OperationResult = 
+    ['set', number]
+    | ['set', bigint]
     | ['out', string]
     | ['jmp', number]
     | ['wrs', string]
@@ -253,8 +315,8 @@ export type OperationOptions<N extends number | bigint> = Readonly<{
 }>;
 
 export type OperationFunction = {
-    (options: OperationOptions<number>): OperationResult<number>;
-    (options: OperationOptions<bigint>): OperationResult<bigint>;
+    (options: OperationOptions<number>): OperationResult;
+    (options: OperationOptions<bigint>): OperationResult;
 };
 
 export const opFunctions: Record<number, OperationFunction> = {
@@ -266,6 +328,18 @@ export const opFunctions: Record<number, OperationFunction> = {
     5: jif,
     6: jni,
     7: end,
+
     8: add,
     9: sub,
+    10: mul,
+    11: div,
+    12: mod,
+
+    13: and,
+    14: ior,
+    15: xor,
+    16: not,
+    17: sls,
+    18: srs,
+    19: sru,
 } as const;

@@ -7,7 +7,7 @@ export function execute(
 ) {
     const op = opFunctions[opCode];
 
-    let result: OperationResult<number | bigint>;
+    let result: OperationResult;
     if(currentIsFloat || valueIsFloat) {
         result = op({
             current: {

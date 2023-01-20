@@ -134,7 +134,7 @@ export function parseNextInstruction(dataView: DataView, index: number, memory: 
 }
 
 function applyResultTo(
-    result: OperationResult<number | bigint>, returnSize: number, returnIsFloat: boolean,
+    result: OperationResult, returnSize: number, returnIsFloat: boolean,
     memory: Bytes, address: number, index: number
 ) {
     let end = false;
